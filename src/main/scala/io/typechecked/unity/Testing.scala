@@ -13,9 +13,18 @@ trait Incremented
 
 // End tags
 
-
-
 trait Fn[A, B] { def apply(a: A): B }
+
+trait Constructor[X] {
+  type Factory <: Fn[_, _]
+  def factory: Factory
+}
+
+object Constructor {
+  type Aux[X, F] = Constructor[X] { type Factory = F }
+}
+
+
 object Fn {
   def apply[A, B](fn: A => B): Fn[A, B] = new Fn[A, B] { def apply(a: A): B = fn(a) }
 }
@@ -94,17 +103,46 @@ object Functions {
     }
   }
 
-  implicit def produceList[T]: Fn[T, List[T]] = Fn { t: T => List(t) }
+  implicit val CreateAge: Int ==>: Age = Fn { i: Int => Age(i) }
+  implicit val CreateUserId: Int ==>: UserId = Fn { i: Int => UserId(i) }
+  implicit val CreateName: String ==>: Name = Fn { s: String => Name(s) }
 
+  implicit def UserConstructor[Id <: UserIdConcept, Age <: AgeConcept, Name <: NameConcept](
+    implicit idImpl: Implementation.Aux[UserIdConcept, Id],
+    ageImpl: Implementation.Aux[AgeConcept, Age],
+    nameImpl: Implementation.Aux[NameConcept, Name]
+  ): Id ==>: Age ==>: Name ==>: User[Id, Age, Name] = Fn { id0: Id =>
+    Fn { age0: Age =>
+      Fn { name0: Name =>
+        new User[Id, Age, Name] {
+          val id = id0
+          val age = age0
+          val name = name0
+        }
+      }
+    }
+  }
+
+  implicit def User2Constructor[Id <: UserIdConcept, Age <: AgeConcept, Name <: NameConcept](
+    implicit idImpl: Implementation.Aux[UserIdConcept, Id],
+    ageImpl: Implementation.Aux[AgeConcept, Age],
+    nameImpl: Implementation.Aux[NameConcept, Name]
+  ): Id ==>: Age ==>: User2[Id, Age] = Fn { id0: Id =>
+    Fn { age0: Age =>
+      new User2[Id, Age] {
+        val id = id0
+        val age = age0
+      }
+    }
+  }
 }
 
 object FunctionsAbstract {
   implicit def UserConceptToAgeConcept[U <: UserConcept, A <: AgeConcept](
-    implicit user: Implementation.Aux[UserConcept, U],
+    implicit user: UserConcept |--> U,
     age: Implementation.Aux[AgeConcept, A],
     fn: Fn[U, A]
   ): Fn[UserConcept, AgeConcept] = Fn { u: UserConcept => fn(u.asInstanceOf[U]) }  // we know all UserConcepts are U
-
 
   implicit def IncrementAge[Age <: AgeConcept](
     implicit age: Implementation.Aux[AgeConcept, Age],
@@ -137,8 +175,6 @@ object FunctionsAbstract {
     ageLt(newAge)(18)
   }
 
-  // implicit def PutUserInList
-
 }
 
 object RunTime {
@@ -158,98 +194,9 @@ object RunTime {
       val age = Age(16)
     }
 
-    val result: Boolean = UserAgePlusOneIsTooYoung.apply(user2)
-    // val result: Boolean = UserAgePlusOneIsTooYoung.apply(user)
-
+    val result = UserAgePlusOneIsTooYoung.apply(user2)
     println(result)
   }
 
 }
 
-// trait Versioned[Concept, V <: TNat] {
-//   type Out <: Concept
-//   def impl: Out
-// }
-
-// object Versioned {
-//   type Aux[Concept, V <: TNat, Out0 <: Concept] = Versioned[Concept, V] { type Out = Out0 }
-
-//   def apply[Concept, V <: TNat, Out0 <: Concept](out: Out0): Versioned.Aux[Concept, V, Out0] = new Versioned[Concept, V] {
-//     type Out = Out0
-//     val impl = out
-//   }
-// }
-
-// trait Canonical[Concept] {
-//   type Out <: Concept
-//   def impl: Out
-// }
-
-// object Canonical {
-//   type Aux[Concept, Out0 <: Concept] = Canonical[Concept] { type Out = Out0 }
-
-//   def apply[Concept, Out0 <: Concept](impl0: Out0): Canonical.Aux[Concept, Out0] = new Canonical[Concept] {
-//     type Out = Out0
-//     val impl = impl0
-//   }
-// }
-
-// // Domain
-// case class UserId(value: Int) extends AnyVal
-// case class User(id: UserId, name: String)
-
-// // Concepts
-// // You write your own ones in the latest library, and reference previously-defined ones
-// trait GetUser { def apply(userId: UserId): User }
-// trait FindUserByInt { def apply(i: Int): Option[User] }
-
-
-// // Implementations
-// // You write any you like and call them whatever you like
-
-// trait GetUser1 extends GetUser {
-//   def apply(userId: UserId): User = User(userId, "johnny")
-// }
-
-// trait GetUser2 extends GetUser {
-//   def apply(userId: UserId): User = User(userId, "jeremy")
-// }
-
-// class FindUserByInt1(implicit getUser: Canonical[GetUser]) extends FindUserByInt {
-//   def apply(i: Int): Option[User] = Some(getUser.impl(UserId(i)))
-// }
-
-// // Registrations
-// // Register all your implementations in some central place. These must be unique, across
-// // all libraries, otherwise orchestration will fail
-
-// object GetUserRegistration {
-//   implicit val versionedGetUser1: Versioned.Aux[GetUser, t1, GetUser1] = Versioned[GetUser, t1, GetUser1](new GetUser1 {})
-//   implicit val versionedGetUser2: Versioned.Aux[GetUser, t2, GetUser2] = Versioned[GetUser, t2, GetUser2](new GetUser2 {})
-// }
-
-// object FindUerByIntRegistration {
-//   implicit def versionedFindUserById1(implicit getUser: Canonical[GetUser]): Versioned.Aux[FindUserByInt, t1, FindUserByInt1] =
-//     Versioned[FindUserByInt, t1, FindUserByInt1](new FindUserByInt1 {})
-// }
-
-// // Orchestration
-// // This is the main app
-// // We register all canonical definitions and their versions.
-// object OrchestrationLevel {
-
-//   implicit val canonicalGetUser: Canonical.Aux[GetUser, GetUser2] =
-//     Canonical[GetUser, GetUser2](new GetUser2 {})
-
-//   implicit val canonicalFindUserByInt: Canonical.Aux[FindUserByInt, FindUserByInt1] =
-//     Canonical[FindUserByInt, FindUserByInt1](new FindUserByInt1())
-
-// }
-
-// object RunTime {
-//   def main(args: Array[String]): Unit = {
-//     import OrchestrationLevel._
-//     val function = implicitly[Canonical[FindUserByInt]]
-//     println(function.impl(19))
-//   }
-// }
