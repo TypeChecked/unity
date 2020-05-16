@@ -16,17 +16,7 @@ trait Incremented
 
 
 
-trait User2[Id <: UserIdConcept, Age <: AgeConcept] extends UserConcept {
-  def id: Id
-  def age: Age
-}
 
-trait PairConcept[A, B] {
-  def _1: A
-  def _2: B
-}
-
-case class Pair[A, B](_1: A, _2: B) extends PairConcept[A, B]
 
 object Canonicals {
 
@@ -55,9 +45,7 @@ object Canonicals {
 
 object Functions {
 
-  implicit def User2ToAge[Id <: UserIdConcept](
-    implicit age: Canonical[AgeConcept]
-  ): Fn[User2[Id, age.Impl], age.Impl] = Fn(_.age)
+
 
   implicit def AgeImplIncrement: Fn[Age, Age @@ Incremented] = Fn { age =>
     tag[Incremented][Age](Age(age.value + 1))
@@ -69,18 +57,7 @@ object Functions {
     }
   }
 
-  implicit def User2Constructor[Id <: UserIdConcept, Age <: AgeConcept, Name <: NameConcept](
-    implicit idImpl: Canonical.Aux[UserIdConcept, Id],
-    ageImpl: Canonical.Aux[AgeConcept, Age],
-    nameImpl: Canonical.Aux[NameConcept, Name]
-  ): Id ==>: Age ==>: User2[Id, Age] = Fn { id0: Id =>
-    Fn { age0: Age =>
-      new User2[Id, Age] {
-        val id = id0
-        val age = age0
-      }
-    }
-  }
+
 
   implicit def BuildList[T, Impl](
     implicit t: T |--> Impl
@@ -90,13 +67,6 @@ object Functions {
     implicit t: T |--> Impl
   ): List[Impl] ==>: Impl ==>: List[Impl] = Fn { list: List[Impl] =>
     Fn { t: Impl => t :: list }
-  }
-
-  implicit def BuildPair[A, AImpl, B, BImpl](
-    implicit a: A |--> AImpl,
-    b: B |--> BImpl,
-  ): AImpl ==>: BImpl ==>: Pair[AImpl, BImpl] = Fn { a =>
-    Fn { b => Pair(a, b) }
   }
 
   implicit def UserAgeIncremented[User <: UserConcept, Age <: AgeConcept](
