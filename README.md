@@ -37,3 +37,84 @@ have to compile 1,000s of source files every time you make a change, you will on
 final verification.
 
 Source control and incremental compilation, as code.
+
+## Code Explanation
+
+### Types and classes
+
+Every single class and type is subject to change. There is no common interface between any types of the same thread, other than a simple trait token. For example, `Name` and `FullName` are both `NameConcept`s. At orchestration time, in the main app, we must choose which of the two `NameConcept`s we want to be canonical.
+
+Classes that contain fields, such as a `case class User(id: Id, age: Age, name: Name)`, can never know what implementations of type concepts they contain. If they did know their precise implementation, it would be impossible to update a `NameConcept` to a new implementation without also updating every piece of `User` functionality. This is a no-go, we want this to be automatic.
+
+Therefore classes with fields must be designed as:
+
+```scala
+  trait User[Id <: UserIdConcept, Age <: AgeConcept, Name <: NameConcept] extends UserConcept {
+    def id: Id
+    def age: Age
+    def name: Name
+  }
+```
+
+### Generic classes
+
+Generic classes are simpler than ordinary classes - they _already_ have their contents defined by a higher level of code. Here is `PairConcept` and it's implementation `Pair`:
+
+```scala
+  trait PairConcept[A, B] {
+    def _1: A
+    def _2: B
+  }
+ 
+  case class Pair[A, B](_1: A, _2: B) extends PairConcept[A, B]
+```
+
+### Writing a function
+
+Because all code implementations can be replaced elsewhere, at any time, and everything you write is immutable, any function you write has to be future proof to the n-th degree. Literally no implementations from elsewhere can be allowed to exist in the function: The entire namespac available and all functionality the function needs access to must be passed in implicitly.
+
+Here's a simple example, accessing the `age` field on `User`:
+
+```scala
+  implicit def UserToAge[Id <: UserIdConcept, Name <: NameConcept](
+    implicit age: Canonical[AgeConcept]
+  ): Fn[User[Id, age.Impl, Name], age.Impl] = Fn(_.age)
+```
+
+Accessing the `Age` field from `User` depends entirely on what the canonical `AgeConcept` is. So we pass this evidence in, and then we can return the right type (the compiler does the calculation for us).
+
+Here's a more complex example, producing a `Pair` of name and age, from a given user:
+
+```scala
+  implicit def AgeAndNamePair[User <: UserConcept, Age <: AgeConcept, Name <: NameConcept, Pair[_, _] <: PairConcept[_, _]](
+    implicit user: UserConcept |--> User,
+    age: AgeConcept |--> Age,
+    name: NameConcept |--> Name,
+    pair: PairConcept[AgeConcept, NameConcept] |--> Pair[Age, Name],
+    getAge: User ==>: Age,
+    getName: User ==>: Name,
+    buildPair: Age ==>: Name ==>: Pair[Age, Name]
+  ): User ==>: Pair[Age, Name] = Fn { user =>
+    buildPair(getAge(user))(getName(user))
+  }
+```
+
+First, we need to know what types we're talking about. So we retrieve our canonical `UserConcept` and name it as `User`, `AgeConcept` as `Age`, etc.
+
+After that, we need to know how to access the `age` field of a `user` (`User ==>: Age`), how to get the name field (`User ==>: Name`), and finally how to build our `Pair` canonical: `Age ==>: Name ==>: Pair[Age, Name]`
+
+Once we have this namespace, and all our building blocks of functionality, we can actually write our implementation in native scala, and it practically writes itself: `buildPair(getAge(user))(getName(user))`
+
+You can think of this implicit list declared before any definition of `Fn`/`==>:` as declaring our variables/namespace. It tells the compiler, when building our program for us, that before we can talk about this functionality we need to have these things sorted out, available, computed.
+
+At no time, ever, does a function talk about any scope beyond its implicit namespace. Only in this way can we make all imutable code reusable in all future scenarios.
+
+## Differences from reality
+
+In reality, the `update` packages as previously mentioned would be libraries, keyed by git hash.
+
+In the file `Testing.scala`, there are several apps. These mimic different versions of the only mutable code allowed. Each `App` object has a docstring explaining the code development that drove the need for the update, and a short example of what the "real" diff would be. I left them all in side-by-side for ease of comparison, so nobody need dig through git commits.
+
+The imports in the `App` objects are long and boring. In reality this would be solved by having a nested, shared package structure across the update libraries.
+
+And, finally, choosing new function implementations is currently achieved by simply importing a different implicit definition. In reality, there would be a further `Canonical` typeclass for you to choose your canonical function definition explicitly (implicitly), from any concept to any concept.
