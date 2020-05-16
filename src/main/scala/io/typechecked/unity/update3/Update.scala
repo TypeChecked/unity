@@ -1,7 +1,10 @@
 package io.typechecked.unity.update3
 
+// Update 3 has full access to fundamentals, update1 and update 2
 import io.typechecked.unity.fundamentals._
-import io.typechecked.unity.update1.Concepts.Age
+import io.typechecked.unity.update1.Implementations.Age
+import io.typechecked.unity.update1.Concepts._
+import io.typechecked.unity.update2.Concepts._
 
 import shapeless.tag
 import shapeless.tag.@@
@@ -12,6 +15,8 @@ object Concepts {
   trait Incremented
 
 }
+
+object Implementations
 
 object Functions {
 

@@ -3,20 +3,19 @@ package io.typechecked.unity.update1
 import io.typechecked.unity.fundamentals._
 
 object Concepts {
-  // Concept of user id
-  trait UserIdConcept
+  trait UserIdConcept  // Concept of user id
+  trait AgeConcept  // concept of age
+  trait NameConcept  // concept of name
+  trait UserConcept  // concept of a user
+}
+
+object Implementations {
+
+  import Concepts._
+
   case class UserId(value: Int) extends UserIdConcept
-
-  // concept of age
-  trait AgeConcept
   case class Age(value: Int) extends AgeConcept
-
-  // concept of name
-  trait NameConcept
   case class Name(value: String) extends NameConcept
-
-  // concept of a user
-  trait UserConcept
 
   // Implementation of a user: Does not know what implementations it contains in its fields
   trait User[Id <: UserIdConcept, Age <: AgeConcept, Name <: NameConcept] extends UserConcept {
@@ -24,9 +23,13 @@ object Concepts {
     def age: Age
     def name: Name
   }
+
 }
 
 object Functions {
+
+  import Concepts._
+  import Implementations._
 
   // Constructors for basic implementation types
   implicit val CreateAge: Int ==>: Age = Fn { i: Int => Age(i) }

@@ -1,5 +1,4 @@
-package io.typechecked
-package unity
+package io.typechecked.unity.fundamentals
 
 trait Canonical[Concept] {
   type Impl <: Concept

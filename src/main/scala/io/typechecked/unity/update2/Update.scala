@@ -3,21 +3,26 @@ package io.typechecked.unity.update2
 import io.typechecked.unity.fundamentals._
 
 // update2 has full access to update1:
-import io.typechecked.unity.update1.Concepts.AgeConcept
-import io.typechecked.unity.update1.Concepts.UserIdConcept
+import io.typechecked.unity.update1.Concepts._
 
 object Concepts {
-
-  // New version of the UserConcept: We've decided Name is not necessary
-  trait User2[Id <: UserIdConcept, Age <: AgeConcept] extends UserConcept {
-    def id: Id
-    def age: Age
-  }
 
   // Completely new concept of a Pair - this is a generic class
   trait PairConcept[A, B] {
     def _1: A
     def _2: B
+  }
+
+}
+
+object Implementations {
+
+  import Concepts._
+
+  // New version of the UserConcept: We've decided Name is not necessary
+  trait User2[Id <: UserIdConcept, Age <: AgeConcept] extends UserConcept {
+    def id: Id
+    def age: Age
   }
 
   // Our first implementation of a pair
@@ -26,6 +31,9 @@ object Concepts {
 }
 
 object Functions {
+
+  import Concepts._
+  import Implementations._
 
   // User2#age
   implicit def User2ToAge[Id <: UserIdConcept](
@@ -53,6 +61,5 @@ object Functions {
   ): AImpl ==>: BImpl ==>: Pair[AImpl, BImpl] = Fn { a =>
     Fn { b => Pair(a, b) }
   }
-
 
 }
