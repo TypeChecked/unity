@@ -1,5 +1,7 @@
 package io.typechecked.unity.update2
 
+import io.typechecked.unity.fundamentals._
+
 // update2 has full access to update1:
 import io.typechecked.unity.update1.Concepts.AgeConcept
 import io.typechecked.unity.update1.Concepts.UserIdConcept

@@ -1,5 +1,7 @@
 package io.typechecked.unity.update1
 
+import io.typechecked.unity.fundamentals._
+
 object Concepts {
   // Concept of user id
   trait UserIdConcept

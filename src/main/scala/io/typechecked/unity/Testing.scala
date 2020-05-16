@@ -1,7 +1,6 @@
 package io.typechecked.unity
 
-import io.typechecked.numerology.ternary.TNat
-import io.typechecked.numerology.ternary.TNat._
+import io.typechecked.unity.fundamentals._
 
 import shapeless.tag
 import shapeless.tag.@@
@@ -11,12 +10,6 @@ import shapeless.tag.@@
 trait Incremented
 
 // End tags
-
-
-
-
-
-
 
 object Canonicals {
 
