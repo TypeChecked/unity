@@ -1,5 +1,4 @@
-package io.typechecked
-package unity
+package io.typechecked.unity
 
 import io.typechecked.numerology.ternary.TNat
 import io.typechecked.numerology.ternary.TNat._
