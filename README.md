@@ -16,7 +16,7 @@ Each update has access to all update packages before it - in a real workflow the
 Your new update library subscribes to all currently available update libraries. When you are done writing your new code,
 you publish your library. In the app they're keyed by integers - in reality they would be keyed by git hash or timestamp.
 
-When you've published you library, you mutate the main repository. This is the only mutable code in the entire project.
+When you've published your library, you mutate the main repository. This is the only mutable code in the entire project.
 
 The main repository (`Testing.scala`) should be a small object, that starts your service and subscribes to implementations
 found in the libraries you have added in a separate stream of work.
