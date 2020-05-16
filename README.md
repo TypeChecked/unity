@@ -26,7 +26,7 @@ any implementation it likes for class concepts and implicit function instances.
 
 After you have changed the main repository to use your new code (by erasing the old import and adding your new one),
 the compiler will verify that the entire stack of implicit code structure is compatible. If it is, it will build
-the entirely new implementation for you automatically. Then we're good! On to the next piece oc work.
+the entirely new implementation for you automatically. Then we're good! On to the next piece of work.
 
 If it's not compatible, the compilation will fail. At this stage, it's back to write a new update to fill the gap you left
 in your implementations. 
