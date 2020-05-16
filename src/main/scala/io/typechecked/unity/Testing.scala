@@ -142,7 +142,7 @@ object FunctionsAbstract {
     implicit user: UserConcept |--> U,
     age: Implementation.Aux[AgeConcept, A],
     fn: Fn[U, A]
-  ): Fn[UserConcept, AgeConcept] = Fn { u: UserConcept => fn(u.asInstanceOf[U]) }  // we know all UserConcepts are U
+  ): UserConcept ==>: AgeConcept = Fn { u: UserConcept => fn(u.asInstanceOf[U]) }  // we know all UserConcepts are U
 
   implicit def IncrementAge[Age <: AgeConcept](
     implicit age: Implementation.Aux[AgeConcept, Age],
