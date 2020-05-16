@@ -14,14 +14,6 @@ trait Incremented
 // End tags
 
 
-trait Canonical[Concept] {
-  type Impl <: Concept
-}
-
-object Canonical {
-  type Aux[Concept, Impl0] = Canonical[Concept] { type Impl = Impl0 }
-}
-
 // Concept of user id
 trait UserIdConcept
 case class UserId(value: Int) extends UserIdConcept
