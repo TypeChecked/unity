@@ -39,22 +39,34 @@ trait User2[Id <: UserIdConcept, Age <: AgeConcept] extends UserConcept {
   def age: Age
 }
 
+trait PairConcept[A, B] {
+  def _1: A
+  def _2: B
+}
+
+case class Pair[A, B](_1: A, _2: B) extends PairConcept[A, B]
+
 object Canonicals {
 
   implicit val idImpl: Canonical.Aux[UserIdConcept, UserId] = null
   implicit val ageImpl: Canonical.Aux[AgeConcept, Age] = null
   implicit val nameImpl: Canonical.Aux[NameConcept, Name] = null
 
-  // implicit def userImpl(implicit
-  //   id: Canonical[UserIdConcept],
-  //   age: Canonical[AgeConcept],
-  //   name: Canonical[NameConcept]
-  // ): Canonical.Aux[UserConcept, User[id.Impl, age.Impl, name.Impl]] = null
+  implicit def pairImpl[A, B](
+    implicit a: Canonical[A],
+    b: Canonical[B]
+  ): Canonical.Aux[PairConcept[A, B], Pair[a.Impl, b.Impl]] = null
 
-  implicit def user2Impl(implicit
+  implicit def userImpl(implicit
     id: Canonical[UserIdConcept],
     age: Canonical[AgeConcept],
-  ): Canonical.Aux[UserConcept, User2[id.Impl, age.Impl]] = null
+    name: Canonical[NameConcept]
+  ): Canonical.Aux[UserConcept, User[id.Impl, age.Impl, name.Impl]] = null
+
+  // implicit def user2Impl(implicit
+  //   id: Canonical[UserIdConcept],
+  //   age: Canonical[AgeConcept],
+  // ): Canonical.Aux[UserConcept, User2[id.Impl, age.Impl]] = null
 
 }
 
@@ -64,6 +76,10 @@ object Functions {
   implicit def UserToAge[Id <: UserIdConcept, Name <: NameConcept](
     implicit age: Canonical[AgeConcept]
   ): Fn[User[Id, age.Impl, Name], age.Impl] = Fn(_.age)
+
+  implicit def UserToName[Id <: UserIdConcept, Age <: AgeConcept](
+    implicit name: Canonical[NameConcept]
+  ): User[Id, Age, name.Impl] ==>: name.Impl = Fn(_.name)
 
   implicit def User2ToAge[Id <: UserIdConcept](
     implicit age: Canonical[AgeConcept]
@@ -122,19 +138,12 @@ object Functions {
     Fn { t: Impl => t :: list }
   }
 
-}
-
-object FunctionsAbstract {
-  implicit def UserConceptToAgeConcept[U <: UserConcept, A <: AgeConcept](
-    implicit user: UserConcept |--> U,
-    age: Canonical.Aux[AgeConcept, A],
-    fn: Fn[U, A]
-  ): UserConcept ==>: AgeConcept = Fn { u: UserConcept => fn(u.asInstanceOf[U]) }  // we know all UserConcepts are U
-
-  implicit def IncrementAge[Age <: AgeConcept](
-    implicit age: Canonical.Aux[AgeConcept, Age],
-    fn: Fn[Age, Age @@ Incremented],
-  ): Fn[AgeConcept, AgeConcept @@ Incremented] = Fn { age => fn(age.asInstanceOf[Age]) }
+  implicit def BuildPair[A, AImpl, B, BImpl](
+    implicit a: A |--> AImpl,
+    b: B |--> BImpl,
+  ): AImpl ==>: BImpl ==>: Pair[AImpl, BImpl] = Fn { a =>
+    Fn { b => Pair(a, b) }
+  }
 
   implicit def UserAgeIncremented[User <: UserConcept, Age <: AgeConcept](
     implicit user: Canonical.Aux[UserConcept, User],
@@ -143,14 +152,9 @@ object FunctionsAbstract {
     incr: Fn[Age, Age @@ Incremented]
   ): Fn[User, Age @@ Incremented] = Fn { user: User => incr(toAge(user)) }
 
-  implicit def AgeLt[Age <: AgeConcept](
-    implicit age: Canonical.Aux[AgeConcept, Age],
-    fn: Fn[Age, Fn[Int, Boolean]]
-  ): Fn[AgeConcept, Fn[Int, Boolean]] = Fn { age =>
-    Fn { limit =>
-      fn(age.asInstanceOf[Age])(limit)
-    }
-  }
+}
+
+object FunctionsAbstract {
 
   implicit def UserAgePlusOneIsTooYoung[User <: UserConcept, Age <: AgeConcept](
     implicit user: UserConcept |--> User,
@@ -185,6 +189,18 @@ object FunctionsAbstract {
     list5
   }
 
+  implicit def AgeAndNamePair[User <: UserConcept, Age <: AgeConcept, Name <: NameConcept, Pair[_, _] <: PairConcept[_, _]](
+    implicit user: UserConcept |--> User,
+    age: AgeConcept |--> Age,
+    name: NameConcept |--> Name,
+    pair: PairConcept[AgeConcept, NameConcept] |--> Pair[Age, Name],
+    getAge: User ==>: Age,
+    getName: User ==>: Name,
+    buildPair: Age ==>: Name ==>: Pair[Age, Name]
+  ): User ==>: Pair[Age, Name] = Fn { user =>
+    buildPair(getAge(user))(getName(user))
+  }
+
 }
 
 object RunTime {
@@ -199,16 +215,20 @@ object RunTime {
       val name = Name("john")
     }
 
-    val user2: User2[UserId, Age] = new User2[UserId, Age] {
-      val id = UserId(1)
-      val age = Age(16)
-    }
+    // val user: User2[UserId, Age] = new User2[UserId, Age] {
+    //   val id = UserId(1)
+    //   val age = Age(16)
+    // }
 
-    val result = UserAgePlusOneIsTooYoung.apply(user2)
+    val result = UserAgePlusOneIsTooYoung.apply(user)
     println(result)
 
-    val nextFiveAges = NextFiveAgesForUser.apply(user2)
+    val nextFiveAges = NextFiveAgesForUser.apply(user)
     println(nextFiveAges)
+
+    // Doesn't compile with User2 as User2 has no name:
+    val pair = AgeAndNamePair.apply(user)
+    println(pair)
   }
 
 }
