@@ -111,6 +111,17 @@ object Functions {
       }
     }
   }
+
+  implicit def BuildList[T, Impl](
+    implicit t: T |--> Impl
+  ): Impl ==>: List[Impl] = Fn { t: Impl => List(t) }
+
+  implicit def PrependList[T, Impl](
+    implicit t: T |--> Impl
+  ): List[Impl] ==>: Impl ==>: List[Impl] = Fn { list: List[Impl] =>
+    Fn { t: Impl => t :: list }
+  }
+
 }
 
 object FunctionsAbstract {
@@ -142,13 +153,36 @@ object FunctionsAbstract {
   }
 
   implicit def UserAgePlusOneIsTooYoung[User <: UserConcept, Age <: AgeConcept](
-    implicit user: Canonical.Aux[UserConcept, User],
+    implicit user: UserConcept |--> User,
     age: Canonical.Aux[AgeConcept, Age],
     userAgePlusOne: Fn[User, Age @@ Incremented],
-    ageLt: Fn[Age, Fn[Int, Boolean]]
+    ageLt: Age ==>: Int ==>: Boolean
   ): Fn[User, Boolean] = Fn { user: User =>
     val newAge = userAgePlusOne(user)
     ageLt(newAge)(18)
+  }
+
+  implicit def NextFiveAgesForUser[User <: UserConcept, Age <: AgeConcept](
+    implicit user: UserConcept |--> User,
+    age: AgeConcept |--> Age,
+    getAge: User ==>: Age,
+    incr: Age ==>: (Age @@ Incremented),
+    list: Age ==>: List[Age],
+    prepend: List[Age] ==>: Age ==>: List[Age]
+  ): User ==>: List[Age] = Fn { user =>
+    val age1 = getAge(user)
+    val age2 = incr(age1)
+    val age3 = incr(age2)
+    val age4 = incr(age3)
+    val age5 = incr(age4)
+
+    val list1 = list(age1)
+    val list2 = prepend(list1)(age2)
+    val list3 = prepend(list2)(age3)
+    val list4 = prepend(list3)(age4)
+    val list5 = prepend(list4)(age5)
+
+    list5
   }
 
 }
@@ -172,6 +206,9 @@ object RunTime {
 
     val result = UserAgePlusOneIsTooYoung.apply(user2)
     println(result)
+
+    val nextFiveAges = NextFiveAgesForUser.apply(user2)
+    println(nextFiveAges)
   }
 
 }
