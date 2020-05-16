@@ -14,12 +14,12 @@ trait Incremented
 // End tags
 
 
-trait Implementation[Concept] {
+trait Canonical[Concept] {
   type Impl <: Concept
 }
 
-object Implementation {
-  type Aux[Concept, Impl0] = Implementation[Concept] { type Impl = Impl0 }
+object Canonical {
+  type Aux[Concept, Impl0] = Canonical[Concept] { type Impl = Impl0 }
 }
 
 // Concept of user id
@@ -48,22 +48,22 @@ trait User2[Id <: UserIdConcept, Age <: AgeConcept] extends UserConcept {
   def age: Age
 }
 
-object Implementations {
+object Canonicals {
 
-  implicit val idImpl: Implementation.Aux[UserIdConcept, UserId] = null
-  implicit val ageImpl: Implementation.Aux[AgeConcept, Age] = null
-  implicit val nameImpl: Implementation.Aux[NameConcept, Name] = null
+  implicit val idImpl: Canonical.Aux[UserIdConcept, UserId] = null
+  implicit val ageImpl: Canonical.Aux[AgeConcept, Age] = null
+  implicit val nameImpl: Canonical.Aux[NameConcept, Name] = null
 
   // implicit def userImpl(implicit
-  //   id: Implementation[UserIdConcept],
-  //   age: Implementation[AgeConcept],
-  //   name: Implementation[NameConcept]
-  // ): Implementation.Aux[UserConcept, User[id.Impl, age.Impl, name.Impl]] = null
+  //   id: Canonical[UserIdConcept],
+  //   age: Canonical[AgeConcept],
+  //   name: Canonical[NameConcept]
+  // ): Canonical.Aux[UserConcept, User[id.Impl, age.Impl, name.Impl]] = null
 
   implicit def user2Impl(implicit
-    id: Implementation[UserIdConcept],
-    age: Implementation[AgeConcept],
-  ): Implementation.Aux[UserConcept, User2[id.Impl, age.Impl]] = null
+    id: Canonical[UserIdConcept],
+    age: Canonical[AgeConcept],
+  ): Canonical.Aux[UserConcept, User2[id.Impl, age.Impl]] = null
 
 }
 
@@ -71,11 +71,11 @@ object Implementations {
 object Functions {
 
   implicit def UserToAge[Id <: UserIdConcept, Name <: NameConcept](
-    implicit age: Implementation[AgeConcept]
+    implicit age: Canonical[AgeConcept]
   ): Fn[User[Id, age.Impl, Name], age.Impl] = Fn(_.age)
 
   implicit def User2ToAge[Id <: UserIdConcept](
-    implicit age: Implementation[AgeConcept]
+    implicit age: Canonical[AgeConcept]
   ): Fn[User2[Id, age.Impl], age.Impl] = Fn(_.age)
 
   implicit def AgeImplIncrement: Fn[Age, Age @@ Incremented] = Fn { age =>
@@ -93,9 +93,9 @@ object Functions {
   implicit val CreateName: String ==>: Name = Fn { s: String => Name(s) }
 
   implicit def UserConstructor[Id <: UserIdConcept, Age <: AgeConcept, Name <: NameConcept](
-    implicit idImpl: Implementation.Aux[UserIdConcept, Id],
-    ageImpl: Implementation.Aux[AgeConcept, Age],
-    nameImpl: Implementation.Aux[NameConcept, Name]
+    implicit idImpl: Canonical.Aux[UserIdConcept, Id],
+    ageImpl: Canonical.Aux[AgeConcept, Age],
+    nameImpl: Canonical.Aux[NameConcept, Name]
   ): Id ==>: Age ==>: Name ==>: User[Id, Age, Name] = Fn { id0: Id =>
     Fn { age0: Age =>
       Fn { name0: Name =>
@@ -109,9 +109,9 @@ object Functions {
   }
 
   implicit def User2Constructor[Id <: UserIdConcept, Age <: AgeConcept, Name <: NameConcept](
-    implicit idImpl: Implementation.Aux[UserIdConcept, Id],
-    ageImpl: Implementation.Aux[AgeConcept, Age],
-    nameImpl: Implementation.Aux[NameConcept, Name]
+    implicit idImpl: Canonical.Aux[UserIdConcept, Id],
+    ageImpl: Canonical.Aux[AgeConcept, Age],
+    nameImpl: Canonical.Aux[NameConcept, Name]
   ): Id ==>: Age ==>: User2[Id, Age] = Fn { id0: Id =>
     Fn { age0: Age =>
       new User2[Id, Age] {
@@ -125,24 +125,24 @@ object Functions {
 object FunctionsAbstract {
   implicit def UserConceptToAgeConcept[U <: UserConcept, A <: AgeConcept](
     implicit user: UserConcept |--> U,
-    age: Implementation.Aux[AgeConcept, A],
+    age: Canonical.Aux[AgeConcept, A],
     fn: Fn[U, A]
   ): UserConcept ==>: AgeConcept = Fn { u: UserConcept => fn(u.asInstanceOf[U]) }  // we know all UserConcepts are U
 
   implicit def IncrementAge[Age <: AgeConcept](
-    implicit age: Implementation.Aux[AgeConcept, Age],
+    implicit age: Canonical.Aux[AgeConcept, Age],
     fn: Fn[Age, Age @@ Incremented],
   ): Fn[AgeConcept, AgeConcept @@ Incremented] = Fn { age => fn(age.asInstanceOf[Age]) }
 
   implicit def UserAgeIncremented[User <: UserConcept, Age <: AgeConcept](
-    implicit user: Implementation.Aux[UserConcept, User],
-    age: Implementation.Aux[AgeConcept, Age],
+    implicit user: Canonical.Aux[UserConcept, User],
+    age: Canonical.Aux[AgeConcept, Age],
     toAge: Fn[User, Age],
     incr: Fn[Age, Age @@ Incremented]
   ): Fn[User, Age @@ Incremented] = Fn { user: User => incr(toAge(user)) }
 
   implicit def AgeLt[Age <: AgeConcept](
-    implicit age: Implementation.Aux[AgeConcept, Age],
+    implicit age: Canonical.Aux[AgeConcept, Age],
     fn: Fn[Age, Fn[Int, Boolean]]
   ): Fn[AgeConcept, Fn[Int, Boolean]] = Fn { age =>
     Fn { limit =>
@@ -151,8 +151,8 @@ object FunctionsAbstract {
   }
 
   implicit def UserAgePlusOneIsTooYoung[User <: UserConcept, Age <: AgeConcept](
-    implicit user: Implementation.Aux[UserConcept, User],
-    age: Implementation.Aux[AgeConcept, Age],
+    implicit user: Canonical.Aux[UserConcept, User],
+    age: Canonical.Aux[AgeConcept, Age],
     userAgePlusOne: Fn[User, Age @@ Incremented],
     ageLt: Fn[Age, Fn[Int, Boolean]]
   ): Fn[User, Boolean] = Fn { user: User =>
@@ -163,7 +163,7 @@ object FunctionsAbstract {
 }
 
 object RunTime {
-  import Implementations._
+  import Canonicals._
   import Functions._
   import FunctionsAbstract._
 
