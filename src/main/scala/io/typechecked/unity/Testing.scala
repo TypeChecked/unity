@@ -13,21 +13,6 @@ trait Incremented
 
 // End tags
 
-trait Fn[A, B] { def apply(a: A): B }
-
-trait Constructor[X] {
-  type Factory <: Fn[_, _]
-  def factory: Factory
-}
-
-object Constructor {
-  type Aux[X, F] = Constructor[X] { type Factory = F }
-}
-
-
-object Fn {
-  def apply[A, B](fn: A => B): Fn[A, B] = new Fn[A, B] { def apply(a: A): B = fn(a) }
-}
 
 trait Implementation[Concept] {
   type Impl <: Concept
