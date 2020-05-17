@@ -111,7 +111,7 @@ At no time, ever, does a function talk about any scope beyond its implicit names
 
 ### Writing a new version of a function
 
-In `update5` there is a function `GetUserFromDb`, and in `update7` we write a new version of this, `GetUserFromDbV2`, which operates in a new `NameConcept` (`FullName` rather than `LastName`).
+In `update5` there is a function `GetUserFromDb`, and in `update7` we write a new version of this, `GetUserFromDbV2`, which written in response to a new `NameConcept` (`FullName` rather than `LastName`).
 
 The diff between these two user-from-db functions is:
 
