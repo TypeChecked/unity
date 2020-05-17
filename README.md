@@ -126,7 +126,7 @@ The diff between these two user-from-db functions is:
 
 And that's all there is to it. We simply delcared in the implicits that we were changing the way we built our `NameConcept`, and then changed the simple usage sites within the body.
 
-Updates are incredibly simple. The program is created for you by the scala compiler, you don't need complex threading of data through stacks of code.
+Updates are incredibly simple. The program is orchestrated for you by the scala compiler, you don't need complex threading of data through stacks of code.
 
 If we plugged that function into our main stack (by importing it at orchestration time), the whole program would compile if the compiler found an implicit `(String, String) ==>: Name` defined for our chosen `Name` canonical.
 
