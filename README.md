@@ -109,6 +109,27 @@ You can think of this implicit list declared before any definition of `Fn`/`==>:
 
 At no time, ever, does a function talk about any scope beyond its implicit namespace. Only in this way can we make all imutable code reusable in all future scenarios.
 
+### Writing a new version of a function
+
+In `update5` there is a function `GetUserFromDb`, and in `update7` we write a new version of this, `GetUserFromDbV2`, which operates in a new `NameConcept` (`FullName` rather than `LastName`).
+
+The diff between these two user-from-db functions is:
+
+```diff
+- wrapName: String ==>: Name,
++ wrapName: (String, String) ==>: Name,
+- Some(buildUser(id)(wrapAge(53))(wrapName("jeremy")))
++ Some(buildUser(id)(wrapAge(53))(wrapName("jeremy" -> "jackson")))
+- Some(buildUser(id)(wrapAge(19))(wrapName("john")))
++ Some(buildUser(id)(wrapAge(19))(wrapName("john" -> "baptist")))
+```
+
+And that's all there is to it. We simply delcared in the implicits that we were changing the way we built our `NameConcept`, and then changed the simple usage sites within the body.
+
+Updates are incredibly simple. The program is created for you by the scala compiler, you don't need complex threading of data through stacks of code.
+
+If we plugged that function into our main stack (by importing it at orchestration time), the whole program would compile if the compiler found an implicit `(String, String) ==>: Name` defined for our chosen `Name` canonical.
+
 ## Differences from reality
 
 In reality, the `update` packages as previously mentioned would be libraries, keyed by git hash.
