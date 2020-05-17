@@ -58,7 +58,7 @@ Therefore classes with fields must be designed as:
 
 ### Generic classes
 
-Generic classes are simpler than ordinary classes - they _already_ have their contents defined by a higher level of code. Here is `PairConcept` and it's implementation `Pair`:
+Generic classes are simpler than ordinary classes - they _already_ have their contents defined by a higher level of code. Here is `PairConcept` and its implementation `Pair`:
 
 ```scala
   trait PairConcept[A, B] {
@@ -111,7 +111,7 @@ At no time, ever, does a function talk about any scope beyond its implicit names
 
 ### Writing a new version of a function
 
-In `update5` there is a function `GetUserFromDb`, and in `update7` we write a new version of this, `GetUserFromDbV2`, which written in response to a new `NameConcept` (`FullName` rather than `LastName`).
+In `update5` there is a function `GetUserFromDb`, and in `update7` we write a new version of this, `GetUserFromDbV2`, which was written in response to a new `NameConcept` (`FullName` rather than `LastName`).
 
 The diff between these two user-from-db functions is:
 
